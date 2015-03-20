@@ -3,31 +3,53 @@
 <html>
 <head>
 <style>
+	body {
+		background-color: #fff;
+		color: #111;
+		margin: 0px;
+		overflow: hidden;
+		font-family: Monospace;
+		font-size: 20px;
+		position: absolute;
+	}
 	#info {
 		position: absolute;
-		top: 0px;
-		width: 100%;
-		padding: 10px;
+		top: 0px; width: 100%;
+		
+		padding: 5px;
 		text-align: center;
-		color: #ff0000
+		color: #ffff00;
 	}
+	#angleInfo {
+		position: absolute;
+		bottom: 100px; width: 100%;
+		color: #ffffff;
+		text-align: center;
+	}
+	strong {color: red}
 </style>
 </head>
 
 <body>
+<div id="info">Homework 1 <br/>
+    type <strong>m</strong> to play or stop music<br/>
+	type <strong>t</strong> to start or stop rotate
+</div>
 
-<div id="info">demo page</div>
+<audio id="backgroundsound" autoplay loop style="display:none">
+<source src="sounds/ansatsu.mp3" type='audio/mp3'>
+</audio>
 
-
-<!-- 
+<!--
 <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
 <script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
+<script src="http://610206008.github.io/web/hw1/hw1.js"></script>
 -->
+
 <script src="js/three.min.js"></script>
 <script src="js/OrbitControls.js"></script>
+<script src="js/KeyboardState.js"></script>
 <script src="js/hw1.js"></script>
-
-
 </body>
 
 </html>

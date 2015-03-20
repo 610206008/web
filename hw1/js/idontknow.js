@@ -1,75 +1,186 @@
-var renderer, geometry, material, mesh, light, controls;
-var teapot;
-var sceneBack, cameraBack, scene, camera;
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	#info {
+		position: absolute;
+		top: 0px; width: 100%;
+		font-family: Monospace;
+		font-size: 20px;
+		padding: 5px;
+		text-align: center;
+		color: #003333
+	}
+	a {color: purple}
+</style>
+</head>
+
+<body>
+
+  <div id = "info"> 
+     webgl tutorial 20 <br/>
+	 Sounds <br/><br/>
+	 with BGM (<a href="javascript:toggle();">dimmer</a>)
+  </div>
+  
+<audio id="collisionsound" style="display:none">
+<source src="sounds/collision3.wav" type='audio/wav'>
+</audio>
+
+<audio id="soundtrack" autoplay loop style="display:none">
+<source src="sounds/KennyG.mp3" type='audio/mp3'>
+</audio>
+
+<script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
+
+<script>
+
+var scene, renderer, camera;
+var controls;
+var clock = new THREE.Clock();
+
+var collisionSound, soundTrack;
+var isPaused = false, soundVal = 1.0, sign = 1.0;
+
+var cube;
+var puck = {
+	pos: new THREE.Vector3(),
+	vel: new THREE.Vector3(),
+	mesh: new THREE.Object3D()
+};
 
 init();
 animate();
 
-function init() {
-    /////////////////////////////////////////////
-    sceneBack = new THREE.Scene();
-    cameraBack = new THREE.OrthographicCamera(-10, 10, 10, -10, 1, 100);
-    cameraBack.position.z = 5;
-    cameraBack.lookAt(new THREE.Vector3(0, 0, 0));
+function toggle() {
+	isPaused = !isPaused;
+	sign = isPaused ? -1 : 1;
+	console.log (isPaused);
+}
 
-    THREE.ImageUtils.crossOrigin = '';
-    var texture = THREE.ImageUtils.loadTexture('http://jyunming-chen.github.io/tutsplus/images/chia.jpg');
+function init()
+{
+	collisionSound = document.getElementById ('collisionsound');
+	soundTrack = document.getElementById ('soundtrack');
+	
+	renderer = new THREE.WebGLRenderer( {antialias:true} );
+	var width = window.innerWidth;
+	var height = window.innerHeight;
+	renderer.setSize (width, height);
+	renderer.setClearColor (0xeeeeee);
+	document.body.appendChild (renderer.domElement);
 
-    var back = new THREE.Mesh(new THREE.PlaneGeometry(20, 20),
-    new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        opacity: 0.315
-    }));
-    back.material.depthTest = false;
-    back.material.depthWrite = false;
-    sceneBack.add(back);
+	scene = new THREE.Scene();
+	
+	//debugger;
+	puck.mesh = new THREE.Mesh (new THREE.CylinderGeometry (6,6,4,20,20), new THREE.MeshLambertMaterial ({color:0xff0000}));
+	puck.pos = new THREE.Vector3 (0,2,0);
+	puck.vel = new THREE.Vector3 (30,0,40);
+	scene.add (puck.mesh);
+	
+	var cubeGeometry = new THREE.BoxGeometry (100,6,100);
+	var cubeMaterial = new THREE.MeshLambertMaterial ({color: 0x888888});
+	cube = new THREE.Mesh (cubeGeometry, cubeMaterial);
+	cube.position.set (0,-2.5,0);
+	scene.add (cube);
+	
+	var cubeGeometry = new THREE.BoxGeometry (5,20,110);
+	var wallMaterial = new THREE.MeshLambertMaterial ({color: 0xee0000,opacity:0.2,transparent:true});
+	var side1 = new THREE.Mesh (cubeGeometry, wallMaterial);
+	side1.position.set (-52.5,5,0);
+	scene.add (side1);
+	var side2 = side1.clone();
+	side2.position.set (52.5, 5,0);
+	scene.add (side2);
+	
+	var cubeGeometry = new THREE.BoxGeometry (100,20,5);
+	var side3 = new THREE.Mesh (cubeGeometry, wallMaterial);
+	side3.position.set (0,5,52.5);
+	scene.add (side3);
+	var side4 = side3.clone();
+	side4.position.set (0,5,-52.5);
+	scene.add (side4);
 
-    ////////////////////////////////////////////////    
-    scene = new THREE.Scene();
+	camera = new THREE.PerspectiveCamera (45, width/height, 1, 10000);
+	camera.position.y = 80;
+	camera.position.z = 200;
+	camera.lookAt (new THREE.Vector3(0,0,0));
 
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
-    camera.position.z = 150;
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
-    scene.add(camera);
+	controls = new THREE.OrbitControls (camera, renderer.domElement);
+	
+	var gridXZ = new THREE.GridHelper(100, 10);
+	gridXZ.setColors( new THREE.Color(0xff0000), new THREE.Color(0xffffff) );
+	scene.add(gridXZ);
 
+	var pointLight = new THREE.PointLight (0xffffff);
+	pointLight.position.set (0,300,200);
+	scene.add (pointLight);
+	
+	window.addEventListener ('resize', onWindowResize, false);
+}
 
-    THREE.ImageUtils.crossOrigin = '';
-    var texture = THREE.ImageUtils.loadTexture('http://jyunming-chen.github.io/tutsplus/images/wood_oak_002_bump.jpg');
+function onWindowResize ()
+{
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize (window.innerWidth, window.innerHeight);
+}
 
-    teapot = new THREE.Mesh(new THREE.TorusKnotGeometry(20, 8),
-    new THREE.MeshPhongMaterial({
-        color: 0x12ff43,
-        bumpMap: texture,
-        bumpScale: 0.32
-    }));
-    scene.add(teapot);
+function animate()
+{
+	soundVal += sign*0.01;
+	soundVal = THREE.Math.clamp (soundVal, 0, 1);
+	soundtrack.volume = soundVal;
 
-    light = new THREE.PointLight(0xffffff);
-    light.position.set(100, 300, 200);
-    scene.add(light);
+	var dt = clock.getDelta();
+	
+	//	puck.pos += puck.vel*dt;
+	var tmp = puck.vel.clone();
+	tmp.multiplyScalar (dt);
+	puck.pos.add (tmp);
 
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0xf6c4df);
+	// collision handling
+	
+	collision();
+	
+	puck.mesh.position.copy (puck.pos);
+	
+	
+	controls.update();
+	
+	requestAnimationFrame ( animate );  
+	renderer.render (scene, camera);
+}
 
-    renderer.autoClear = false;
-
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-    document.body.appendChild(renderer.domElement);
-
+function collision ()
+{
+	if (puck.pos.x > 47) {
+		puck.vel.x *= -1;
+		puck.pos.x = 47;
+		collisionSound.play();
+	}
+	if (puck.pos.x < -47) {
+		puck.vel.x *= -1;
+		puck.pos.x = -47;
+		collisionSound.play();
+	}
+	if (puck.pos.z > 47) {
+		puck.vel.z *= -1;
+		puck.pos.z = 47;
+		collisionSound.play();
+	}
+	if (puck.pos.z < -47) {
+		puck.vel.z *= -1;
+		puck.pos.z = -47;
+		collisionSound.play();
+	}
 }
 
 
-function animate() {
-    controls.update();
-    requestAnimationFrame(animate);
-    render();
-}
 
-function render() {
-    renderer.clear();
-    renderer.render(sceneBack, cameraBack);
-    renderer.render(scene, camera);
-}
+</script>
+</body>
+
+</html>
